@@ -1,0 +1,91 @@
+---
+title: "Reproducible Research - Peer Assignment 1"
+output: html_document
+---
+
+
+Loading the Data
+
+```{r, echo=TRUE}
+setwd("C:/Users/arierapa/Google Drive/Project2015/Analytics/Education/Coursera Reproducible Research/Ass1")
+data<-read.csv("activity.csv")
+```
+
+
+Summary of the Data
+
+```{r, echo=TRUE}
+head(data,10)
+str(data)
+summary(data)
+dim(data)
+```
+
+Processing the Data
+
+```{r, echo=TRUE}
+data1<-data
+data1$fdate<-as.Date(data1$date,format="%Y-%m-%d")
+str(data1)
+```
+
+What is mean total number of steps taken per day?
+
+```{r, echo=TRUE}
+ssteps<-aggregate(steps ~ fdate,data=data1,sum)
+hist(ssteps$steps,
+     main="Histogram of Steps per Day", 
+     xlab="Number of Steps", 
+     col="blue")
+mean(ssteps$steps)
+median(ssteps$steps)
+```
+
+What is the average daily activity pattern?
+
+```{r, echo=TRUE}
+trend<-aggregate(steps ~ interval,data=data1,mean)
+head(trend)
+plot(trend$interval,trend$steps,type="l",
+     main="Daily Activity Pattern", 
+     xlab="Intervals", 
+     ylab="Average of Steps per Interval")
+trend$interval[which.max(trend$steps)]
+```
+
+Imputing missing values
+
+```{r, echo=TRUE}
+# Total number of rows with NA
+nrow(data1) - sum(complete.cases(data1))
+
+# filing the NA of steps by using the median of the 5 minute interval
+data2<-data
+data2$steps[is.na(data2$steps)]<-trend$steps[match(data2$interval,trend$interval)][is.na(data2$steps)]
+  
+data3<-data2
+data3$fdate<-as.Date(data3$date,format="%Y-%m-%d")
+
+ssteps2<-aggregate(steps ~ fdate,data=data3,sum)
+hist(ssteps2$steps,
+     main="Histogram of Steps per Day", 
+     xlab="Number of Steps", 
+     col="blue")
+
+mean(ssteps2$steps)
+median(ssteps2$steps)
+```
+
+Are there differences in activity patterns between weekdays and weekends?
+
+```{r, echo=TRUE}
+data3$wd<-as.factor(weekdays(data3$fdate))
+data3$wd1<-0
+data3$wd1[data3$wd=="sábado"]<-1
+data3$wd1[data3$wd=="domingo"]<-1
+data3$wd1<-as.factor(data3$wd1)
+levels(data3$wd1)<-c("weekday","weekend")
+library(lattice)
+wtrend<-aggregate(steps~ interval + wd1,data=data3,mean)
+xyplot(steps~interval | factor(wd1), data=wtrend,type="l",layout=c(1,2))
+```
